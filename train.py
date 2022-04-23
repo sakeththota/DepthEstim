@@ -5,10 +5,10 @@ import datetime
 import torch
 import torch.nn as nn
 import torch.nn.utils as utils
-import torchvision.utils as vutils    
+import torchvision.utils as vutils
 from tensorboardX import SummaryWriter
 
-from model import Model
+from model import PTModel
 from loss import ssim
 from data import getTrainingTestingData
 from utils import AverageMeter, DepthNorm, colorize
@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
 
     # Create model
-    model = Model().cuda()
+    model = PTModel().cuda()
     print('Model created.')
 
     # Training parameters
@@ -78,7 +78,7 @@ def main():
             batch_time.update(time.time() - end)
             end = time.time()
             eta = str(datetime.timedelta(seconds=int(batch_time.val*(N - i))))
-        
+
             # Log progress
             niter = epoch*N+i
             if i % 5 == 0:

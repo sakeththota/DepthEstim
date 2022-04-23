@@ -4,6 +4,7 @@ from torchvision import models
 import torch.nn.functional as F
 
 
+
 class UpSample(nn.Sequential):
     def __init__(self, skip_input, output_features):
         super(UpSample, self).__init__()        
@@ -43,7 +44,7 @@ class Decoder(nn.Module):
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()       
-        self.original_model = models.densenet169( pretrained=False )
+        self.original_model = models.densenet169( pretrained=True )
 
     def forward(self, x):
         features = [x]
@@ -53,9 +54,68 @@ class Encoder(nn.Module):
 class PTModel(nn.Module):
     def __init__(self):
         super(PTModel, self).__init__()
+        ## original code
         self.encoder = Encoder()
         self.decoder = Decoder()
 
-    def forward(self, x):
-        return self.decoder( self.encoder(x) )
+        ## extended layers
+        self.Maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.conv1 = conv_net(1,8)
+        self.bridge = conv_net(8,16)
+        self.up1 = up_net(16,8,2)
+        self.conv3 = conv_net(16,8)
+        self.conv4 = conv_net(8,4)
+        self.conv5 = conv_net(4,1)
 
+    def forward(self, x):
+        x = self.decoder(self.encoder(x))
+
+        e1 = self.conv1(x)
+        e2 = self.Maxpool(e1) ## 8, H/2, W/2
+        bottom = self.bridge(e2)
+        d1 = self.up1(bottom)
+        d2 = torch.cat(( e1, d1), dim=1) ## 16, H, W
+
+        out = self.conv5(self.conv4(self.conv3(d2)))
+
+
+
+
+
+
+        return out
+
+
+class conv_net(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(conv_net, self).__init__()
+
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        x = self.conv(x)
+
+        return x
+
+
+class up_net(nn.Module):
+    def __init__(self, in_ch, out_ch, s):
+        super(up_net, self).__init__()
+
+        self.up_net = nn.Sequential(
+            nn.Upsample(scale_factor=s),
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        x = self.up_net(x)
+        return x
