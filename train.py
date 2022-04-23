@@ -21,9 +21,13 @@ def main():
     parser.add_argument('--lr', '--learning-rate', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--bs', default=4, type=int, help='batch size')
     args = parser.parse_args()
-
+    load_model = False
     # Create model
     model = PTModel().cuda()
+    if load_model:
+        print('Load pretrain weights')
+        model.load_state_dict(torch.load("..", map_location='cpu'))
+
     print('Model created.')
 
     # Training parameters
@@ -105,6 +109,8 @@ def main():
             if i % 300 == 0:
                 LogProgress(model, writer, test_loader, niter)
 
+        print("save model")
+        torch.save(model.state_dict(), 'weights/B_net_ep_%d_%.3f.pth' % (epoch, l_depth))
         # Record epoch's intermediate results
         LogProgress(model, writer, test_loader, niter)
         writer.add_scalar('Train/Loss.avg', losses.avg, epoch)
