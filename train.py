@@ -12,6 +12,7 @@ from model import PTModel
 from loss import ssim
 from data import getTrainingTestingData
 from utils import AverageMeter, DepthNorm, colorize
+import kornia as K
 
 def main():
     # Arguments
@@ -67,7 +68,16 @@ def main():
             l_depth = l1_criterion(output, depth_n)
             l_ssim = torch.clamp((1 - ssim(output, depth_n, val_range = 1000.0 / 10.0)) * 0.5, 0, 1)
 
-            loss = (1.0 * l_ssim) + (0.1 * l_depth)
+            ## add gradient loss
+            grad_1st = K.filters.spatial_gradient(output)      ## first order loss
+            grad_true_1st = K.filters.spatial_gradient(depth_n) ## first order loss
+            grad_2nd = K.filters.spatial_gradient(output, order=2)  ## second order loss
+            grad_true_2nd = K.filters.spatial_gradient(depth_n, order=2)  ## second order loss
+
+            l_grad_1 = torch.mean(torch.abs(torch.sub(grad_1st, grad_true_1st)))
+            l_grad_2 = torch.mean(torch.abs(torch.sub(grad_2nd, grad_true_2nd)))
+
+            loss = (1.0 * l_ssim) + (0.1 * l_depth) + (0.05 * (l_grad_1 + l_grad_2))
 
             # Update step
             losses.update(loss.data.item(), image.size(0))
