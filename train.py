@@ -110,7 +110,7 @@ def main():
                 LogProgress(model, writer, test_loader, niter)
 
         print("save model")
-        torch.save(model.state_dict(), 'weights/B_net_ep_%d_%.3f.pth' % (epoch, l_depth))
+        torch.save(model.state_dict(), 'weights/baseline_gradient_ep_%d_%.3f.pth' % (epoch, l_depth))
         # Record epoch's intermediate results
         LogProgress(model, writer, test_loader, niter)
         writer.add_scalar('Train/Loss.avg', losses.avg, epoch)

@@ -51,7 +51,7 @@ class Encoder(nn.Module):
         for k, v in self.original_model.features._modules.items(): features.append( v(features[-1]) )
         return features
 
-class PTModel(nn.Module):
+class BModel(nn.Module):
     def __init__(self):
         super(PTModel, self).__init__()
         ## original code
@@ -75,15 +75,20 @@ class PTModel(nn.Module):
         bottom = self.bridge(e2)
         d1 = self.up1(bottom)
         d2 = torch.cat(( e1, d1), dim=1) ## 16, H, W
-
         out = self.conv5(self.conv4(self.conv3(d2)))
 
-
-
-
-
-
         return out
+
+class PTModel(nn.Module):
+    def __init__(self):
+        super(PTModel, self).__init__()
+        ## original code
+        self.encoder = Encoder()
+        self.decoder = Decoder()
+
+    def forward(self, x):
+
+        return self.decoder(self.encoder(x))
 
 
 class conv_net(nn.Module):
