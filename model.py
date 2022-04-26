@@ -53,7 +53,7 @@ class Encoder(nn.Module):
 
 class BModel(nn.Module):
     def __init__(self):
-        super(PTModel, self).__init__()
+        super(BModel, self).__init__()
         ## original code
         self.encoder = Encoder()
         self.decoder = Decoder()
